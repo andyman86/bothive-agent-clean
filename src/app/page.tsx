@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import agentConfig from "./agent.config";
+import agentConfig from "./agent.config"; // <- THIS is the fix (same folder)
 
 export default function Home() {
   const [open, setOpen] = useState(false);
@@ -15,7 +15,12 @@ export default function Home() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: input }] }),
+        body: JSON.stringify({
+          messages: [
+            { role: "system", content: agentConfig.system },
+            { role: "user", content: input },
+          ],
+        }),
       });
       const data = await res.json();
       setOut(data?.message?.content ?? JSON.stringify(data));
@@ -26,30 +31,24 @@ export default function Home() {
 
   return (
     <>
-      {/* Page can otherwise be empty; the widget floats in the corner */}
+      {/* floating round button */}
       <div className="chat-root">
-        {/* Floating round bubble */}
-        <button
-          className="chat-bubble"
-          aria-label="Open chat"
-          onClick={() => setOpen(true)}
-          style={{ background: agentConfig.colors.primary }}
-        >
-          <img src={agentConfig.avatar} alt="Bot" />
+        <button className="chat-bubble" onClick={() => setOpen((v) => !v)} aria-label="Open chat">
+          <img src={agentConfig.avatar} alt={agentConfig.name} />
         </button>
 
-        {/* Sliding chat panel */}
+        {/* slide-up panel */}
         {open && (
-          <div className="chat-panel" role="dialog" aria-label={`${agentConfig.name} chat`}>
+          <div className="chat-panel" role="dialog" aria-label={agentConfig.name}>
             <div className="chat-header" style={{ background: agentConfig.colors.primary }}>
               <img src={agentConfig.avatar} alt="" />
-              <div style={{ marginLeft: 8, color: "#fff" }}>{agentConfig.name}</div>
+              <span style={{ color: "#fff" }}>{agentConfig.name}</span>
               <button
+                className="chat-send"
                 onClick={() => setOpen(false)}
-                style={{ marginLeft: "auto", background: "transparent", color: "#fff", border: 0, cursor: "pointer" }}
-                aria-label="Close"
+                style={{ background: agentConfig.colors.primary }}
               >
-                ✕
+                Close
               </button>
             </div>
 
@@ -59,9 +58,15 @@ export default function Home() {
                   className="chat-input"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Type a message…"
+                  placeholder="Ask something…"
                 />
-                <button className="chat-send" type="submit">Send</button>
+                <button
+                  className="chat-send"
+                  type="submit"
+                  style={{ background: agentConfig.colors.primary }}
+                >
+                  Send
+                </button>
               </form>
               <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>{out}</pre>
             </div>
