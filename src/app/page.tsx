@@ -2,17 +2,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { agentConfig } from "./agent.config";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 export default function Home() {
-  const [open, setOpen] = useState(true);         // set to false if you want it closed by default
+  const [open, setOpen] = useState(true); // set to false if you want it closed by default
   const [input, setInput] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([
-    { role: "assistant", content: "Hi! How can I help?" },
+    { role: "assistant", content: `Hi! I'm ${agentConfig.name}. How can I help?` },
   ]);
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const primary = agentConfig.colors?.primary ?? "#111827";
+  const accent = agentConfig.colors?.accent ?? "#34d399";
+  const avatar = agentConfig.avatar ?? "/bothive.svg";
 
   async function send(e?: React.FormEvent) {
     e?.preventDefault();
@@ -48,21 +53,17 @@ export default function Home() {
   }
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 999999, behavior: "smooth" });
+    scrollRef.current?.scrollTo({ top: 1e9, behavior: "smooth" });
   }, [msgs, open]);
 
   return (
     <>
-      {/* Optional: tiny brand strip at top of the page (not necessary) */}
       <header style={{ padding: 12, display: "flex", alignItems: "center", gap: 8 }}>
-        {/* If you only have PNG, change src to "/bothive.png" */}
-        <img src="/bothive.svg" width={28} height={28} alt="logo" />
-        <strong>Bothive Agent</strong>
+        <img src={avatar} width={28} height={28} alt="logo" />
+        <strong>{agentConfig.name}</strong>
       </header>
 
-      {/* The rest of your site can go here… */}
-
-      {/* Launcher Button */}
+      {/* FAB launcher */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Open chat"
@@ -74,17 +75,18 @@ export default function Home() {
           height: 56,
           borderRadius: 999,
           border: "none",
-          background: "#111",
+          background: primary,
           color: "#fff",
           boxShadow: "0 8px 24px rgba(0,0,0,.25)",
           cursor: "pointer",
           zIndex: 999999,
+          fontSize: 20,
         }}
       >
         {open ? "×" : "💬"}
       </button>
 
-      {/* Chat Panel */}
+      {/* Chat panel */}
       {open && (
         <div
           style={{
@@ -111,10 +113,21 @@ export default function Home() {
               display: "flex",
               alignItems: "center",
               gap: 8,
+              background: "#fff",
             }}
           >
-            <img src="/bothive.svg" width={20} height={20} alt="logo" />
-            <strong>Bothive Agent</strong>
+            <img src={avatar} width={20} height={20} alt="logo" />
+            <strong>{agentConfig.name}</strong>
+            <div
+              title="online"
+              style={{
+                marginLeft: "auto",
+                width: 8,
+                height: 8,
+                borderRadius: 8,
+                background: accent,
+              }}
+            />
           </div>
 
           <div
@@ -140,7 +153,7 @@ export default function Home() {
                     maxWidth: "85%",
                     padding: "8px 10px",
                     borderRadius: 10,
-                    background: m.role === "user" ? "#111" : "#fff",
+                    background: m.role === "user" ? primary : "#fff",
                     color: m.role === "user" ? "#fff" : "#111",
                     border: "1px solid #eee",
                     whiteSpace: "pre-wrap",
@@ -179,7 +192,7 @@ export default function Home() {
                 padding: "10px 14px",
                 borderRadius: 8,
                 border: "none",
-                background: "#111",
+                background: primary,
                 color: "#fff",
                 cursor: busy ? "not-allowed" : "pointer",
               }}
