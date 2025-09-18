@@ -1,1 +1,6 @@
-﻿:root{color-scheme:light dark;}
+/* src/app/globals.css */
+html, body {
+  height: 100%;
+  background: #fff;
+}
+* { box-sizing: border-box; }
