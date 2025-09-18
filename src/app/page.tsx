@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { agentConfig } from "./agent.config";
+import { useState } from "react";
+import agentConfig from "../agent.config";
 
 export default function Home() {
   const [open, setOpen] = useState(false);
@@ -25,38 +25,49 @@ export default function Home() {
   }
 
   return (
-    <main>
-      {/* Floating chat widget */}
+    <>
+      {/* Page can otherwise be empty; the widget floats in the corner */}
       <div className="chat-root">
-        {/* Bubble */}
-        <button className="chat-bubble" onClick={() => setOpen((v) => !v)}>
-          💬
+        {/* Floating round bubble */}
+        <button
+          className="chat-bubble"
+          aria-label="Open chat"
+          onClick={() => setOpen(true)}
+          style={{ background: agentConfig.colors.primary }}
+        >
+          <img src={agentConfig.avatar} alt="Bot" />
         </button>
 
-        {/* Panel */}
+        {/* Sliding chat panel */}
         {open && (
-          <div className="chat-panel">
+          <div className="chat-panel" role="dialog" aria-label={`${agentConfig.name} chat`}>
             <div className="chat-header" style={{ background: agentConfig.colors.primary }}>
-              <img src={agentConfig.avatar} alt="logo" />
-              <span>{agentConfig.name}</span>
+              <img src={agentConfig.avatar} alt="" />
+              <div style={{ marginLeft: 8, color: "#fff" }}>{agentConfig.name}</div>
+              <button
+                onClick={() => setOpen(false)}
+                style={{ marginLeft: "auto", background: "transparent", color: "#fff", border: 0, cursor: "pointer" }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="chat-body">
+              <form className="chat-form" onSubmit={onSubmit}>
+                <input
+                  className="chat-input"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type a message…"
+                />
+                <button className="chat-send" type="submit">Send</button>
+              </form>
               <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>{out}</pre>
             </div>
-
-            <form className="chat-form" onSubmit={onSubmit}>
-              <input
-                className="chat-input"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything…"
-              />
-              <button className="chat-send" type="submit">Send</button>
-            </form>
           </div>
         )}
       </div>
-    </main>
+    </>
   );
 }
