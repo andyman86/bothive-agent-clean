@@ -1,14 +1,10 @@
 // src/app/layout.tsx
-import { agentConfig } from "./agent.config";
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <title>{agentConfig.name}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </head>
-      <body style={{ margin: 0, fontFamily: "system-ui" }}>{children}</body>
+      <body style={{ margin: 0, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, 'Helvetica Neue', Arial" }}>
+        {children}
+      </body>
     </html>
   );
 }
