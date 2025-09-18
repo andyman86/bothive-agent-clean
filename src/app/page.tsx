@@ -1,24 +1,79 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Msg = { role: "user" | "assistant" | "system"; content: string };
 
-// 👇 Change this to whatever you want your bot to be called.
-const AGENT_NAME = "Bothive Agent";
+type AgentConfig = {
+  id: string;
+  name: string;            // "Bothive Agent"
+  system?: string;         // system prompt
+  primary?: string;        // header/button color
+  accent?: string;         // online-dot color
+  avatar?: string;         // "/avatars/bothive.png"
+};
+
+// ---- defaults (used if config not found) ----
+const DEFAULT_AGENT: AgentConfig = {
+  id: "default",
+  name: "Bothive Agent",
+  system: "You are a helpful, concise AI assistant.",
+  primary: "#111827", // slate-900
+  accent: "#34d399",  // green-400
+  avatar: "/avatars/bothive.png",
+};
 
 export default function CornerChat() {
+  // load agent id from ?agent=<id>
+  const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const agentId = search?.get("agent") || "default";
+
+  const [cfg, setCfg] = useState<AgentConfig>(DEFAULT_AGENT);
   const [open, setOpen] = useState(true);
   const [input, setInput] = useState("");
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { role: "assistant", content: `Hi! I’m ${AGENT_NAME}. How can I help?` },
-  ]);
+  const [msgs, setMsgs] = useState<Msg[]>([]);
   const [loading, setLoading] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // fetch config json from /agents/<id>.json (in /public/agents)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/agents/${agentId}.json`, { cache: "no-store" });
+        if (!res.ok) throw new Error("Agent config not found");
+        const j = (await res.json()) as AgentConfig;
+        if (!cancelled) setCfg({ ...DEFAULT_AGENT, ...j, id: agentId });
+      } catch {
+        if (!cancelled) setCfg({ ...DEFAULT_AGENT, id: agentId });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentId]);
+
+  // initial greeting depends on current config
+  useEffect(() => {
+    setMsgs([{ role: "assistant", content: `Hi! I’m ${cfg.name}. How can I help?` }]);
+  }, [cfg.id, cfg.name]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [msgs, loading, open]);
+
+  const headerStyle = useMemo(
+    () => ({
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "10px 12px",
+      background: cfg.primary,
+      color: "#fff",
+    }),
+    [cfg.primary]
+  );
 
   async function send() {
     if (!input.trim() || loading) return;
@@ -32,9 +87,8 @@ export default function CornerChat() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // pass running history with a system nudge for the agent name
           messages: [
-            { role: "system", content: `You are ${AGENT_NAME}. Be helpful and concise.` },
+            { role: "system", content: cfg.system ?? DEFAULT_AGENT.system! },
             ...msgs,
             { role: "user", content: userText },
           ],
@@ -77,13 +131,14 @@ export default function CornerChat() {
             height: 56,
             borderRadius: "50%",
             border: "none",
-            background: "#111827",
+            background: cfg.primary,
             color: "#fff",
             boxShadow: "0 6px 20px rgba(0,0,0,.25)",
             cursor: "pointer",
             fontSize: 18,
+            zIndex: 99999,
           }}
-          title={AGENT_NAME}
+          title={cfg.name}
         >
           💬
         </button>
@@ -109,26 +164,28 @@ export default function CornerChat() {
           }}
         >
           {/* Header */}
-          <header
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "10px 12px",
-              background: "#111827",
-              color: "#fff",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <header style={headerStyle as any}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {cfg.avatar ? (
+                <img
+                  src={cfg.avatar}
+                  alt={`${cfg.name} logo`}
+                  width={22}
+                  height={22}
+                  style={{ borderRadius: 4, objectFit: "cover" }}
+                />
+              ) : null}
+              <strong>{cfg.name}</strong>
               <div
+                title="online"
                 style={{
+                  marginLeft: 6,
                   width: 8,
                   height: 8,
                   borderRadius: "50%",
-                  background: "#34d399", // green dot
+                  background: cfg.accent || DEFAULT_AGENT.accent,
                 }}
               />
-              <strong>{AGENT_NAME}</strong>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -164,8 +221,22 @@ export default function CornerChat() {
                     display: "flex",
                     justifyContent: isUser ? "flex-end" : "flex-start",
                     margin: "6px 0",
+                    gap: 8,
                   }}
                 >
+                  {/* avatar bubble for assistant */}
+                  {!isUser && cfg.avatar ? (
+                    <img
+                      src={cfg.avatar}
+                      alt={cfg.name}
+                      width={26}
+                      height={26}
+                      style={{ borderRadius: 6, objectFit: "cover", marginTop: 4 }}
+                    />
+                  ) : (
+                    !isUser && <div style={{ width: 26 }} />
+                  )}
+
                   <div
                     style={{
                       maxWidth: 260,
@@ -178,9 +249,7 @@ export default function CornerChat() {
                     }}
                   >
                     {!isUser && (
-                      <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4 }}>
-                        {AGENT_NAME}
-                      </div>
+                      <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4 }}>{cfg.name}</div>
                     )}
                     {m.content}
                   </div>
@@ -224,7 +293,7 @@ export default function CornerChat() {
                 padding: "10px 14px",
                 border: "none",
                 borderRadius: 8,
-                background: "#111827",
+                background: cfg.primary,
                 color: "#fff",
                 cursor: loading ? "default" : "pointer",
               }}
@@ -237,5 +306,4 @@ export default function CornerChat() {
     </>
   );
 }
-
 
