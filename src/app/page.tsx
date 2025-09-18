@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import agentConfig from "../agent.config";
+import agentConfig from "./agent.config";
 
 export default function Home() {
   const [open, setOpen] = useState(false);
