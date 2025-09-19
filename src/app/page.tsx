@@ -6,18 +6,21 @@ import { agentConfig } from "./agent.config";
 export default function Home() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("Say hello");
-  const [out, setOut] = useState<string>("");
+  const [out, setOut] = useState<string>("I run on OpenAI's GPT-4 architecture. How can I assist you today?");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+
     setOut("…thinking…");
+    setInput("");            // <-- clears the field right away
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: input }],
-        }),
+        body: JSON.stringify({ messages: [{ role: "user", content: text }] }),
       });
       const data = await res.json();
       setOut(data?.message?.content ?? JSON.stringify(data));
@@ -28,12 +31,12 @@ export default function Home() {
 
   return (
     <main>
-      {/* corner launcher */}
       <div className="chat-root">
         <button
           className="chat-bubble"
           aria-label={`${agentConfig.name} chat`}
           onClick={() => setOpen((v) => !v)}
+          title={open ? "Close chat" : "Open chat"}
         >
           <img src={agentConfig.avatar} alt="" />
         </button>
@@ -42,7 +45,7 @@ export default function Home() {
           <div className="chat-panel">
             <div className="chat-header">
               <img src={agentConfig.avatar} alt="" />
-              <div style={{ marginLeft: 8 }}>{agentConfig.name}</div>
+              <div>{agentConfig.name}</div>
             </div>
 
             <div className="chat-body">
@@ -56,9 +59,7 @@ export default function Home() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask something…"
               />
-              <button className="chat-send" type="submit">
-                Send
-              </button>
+              <button className="chat-send" type="submit">Send</button>
             </form>
           </div>
         )}
